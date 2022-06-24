@@ -81,7 +81,12 @@ const App = () => {
       });
 
       console.log({logoutUrl});
-      await fetch(logoutUrl);
+      //   await fetch(logoutUrl);
+      // TODO: [fix] logout workaround
+
+      setAccessToken(null);
+      setEmail('');
+      setPassword('');
     }
   };
 
