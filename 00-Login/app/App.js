@@ -33,8 +33,10 @@ const App = () => {
     console.log({email, password});
   }, [password, email]);
 
-  const onLogin = async () => {
+  const onLogin = async connection => {
     try {
+      setConnection(connection);
+
       let credentials;
 
       console.log({isSocialProvider: isSocialProvider(connection), connection});
