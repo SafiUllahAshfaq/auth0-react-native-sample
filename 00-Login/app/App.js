@@ -13,59 +13,79 @@ import Auth0 from 'react-native-auth0';
 var credentials = require('./auth0-configuration');
 const auth0 = new Auth0(credentials);
 
+const connections = {
+  username_password: 'username_password',
+  google: 'google-oauth2',
+  apple: 'apple',
+};
+
+// TODO: [refactor] Move to utils
+const isSocialProvider = connection =>
+  [connections.google, connections.apple].includes(connection);
+
 const App = () => {
   const [accessToken, setAccessToken] = useState(null);
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [connection, setConnection] = useState(connections.username_password);
 
   useEffect(() => {
     console.log({email, password});
   }, [password, email]);
 
-  const onLogin = async (connection = 'username-password') => {
-    let login;
+  const onLogin = async () => {
+    try {
+      let credentials;
 
-    if (connection === 'apple') {
-      login = await auth0.webAuth.authorize({
-        connection: 'apple',
-      });
-    } else if (connection === 'google') {
-      login = await auth0.webAuth.authorize({
-        connection: 'google-oauth2',
-      });
-    } else {
-      if (!email.trim() || !password.trim()) {
-        return console.error('Please provide email and password');
+      console.log({isSocialProvider: isSocialProvider(connection), connection});
+
+      if (isSocialProvider(connection)) {
+        credentials = await auth0.webAuth.authorize({
+          connection,
+        });
+      } else {
+        if (!email.trim() || !password.trim()) {
+          return console.error('Please provide email and password');
+        }
+
+        credentials = await auth0.auth.passwordRealm({
+          username: email,
+          password,
+          realm: credentials.realm,
+          scope: credentials.scope,
+        });
       }
 
-      login = await auth0.auth.passwordRealm({
-        username: email,
-        password,
-        realm: credentials.realm,
-        scope: credentials.scope,
-      });
+      console.log({credentials});
+      setAccessToken(credentials.accessToken);
+    } catch (error) {
+      console.error('Error: ', error);
     }
-
-    login
-      .then(credentials => {
-        console.log({credentials});
-        setAccessToken(credentials.accessToken);
-      })
-      .error(err => {
-        console.error('Err: ', err);
-      });
   };
 
   const onLogout = () => {
-    const logoutUrl = auth0.auth.logoutUrl({
-      clientId: credentials.clientId,
-      federated: true,
-    });
+    if (isSocialProvider(connection)) {
+      auth0.webAuth
+        .clearSession()
+        .then(success => {
+          Alert.alert('Logged out!');
+          setAccessToken(null);
+        })
+        .catch(error => {
+          console.log('Log out cancelled', error);
+        });
+    } else {
+      const logoutUrl = auth0.auth.logoutUrl({
+        clientId: credentials.clientId,
+        federated: true,
+      });
 
-    console.log({logoutUrl});
+      console.log({logoutUrl});
+    }
   };
 
   let loggedIn = accessToken !== null;
+
   return (
     <View style={styles.container}>
       <Text style={styles.header}> Auth0Sample - Login </Text>
@@ -97,8 +117,20 @@ const App = () => {
 
       {loggedIn ? null : (
         <View style={{flexDirection: 'row'}}>
-          <Button title="Google" onPress={() => onLogin('google')} />
-          <Button title="Apple" onPress={() => onLogin('apple')} />
+          <Button
+            title="Google"
+            onPress={() => {
+              setConnection(connections.google);
+              onLogin();
+            }}
+          />
+          <Button
+            title="Apple"
+            onPress={() => {
+              setConnection(connections.apple);
+              onLogin();
+            }}
+          />
         </View>
       )}
     </View>
