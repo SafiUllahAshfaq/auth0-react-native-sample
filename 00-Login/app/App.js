@@ -10,8 +10,8 @@ import React, {useEffect, useState} from 'react';
 import {Alert, Button, StyleSheet, Text, View, TextInput} from 'react-native';
 import Auth0 from 'react-native-auth0';
 
-var credentials = require('./auth0-configuration');
-const auth0 = new Auth0(credentials);
+var config = require('./auth0-configuration');
+const auth0 = new Auth0(config);
 
 const connections = {
   username_password: 'username_password',
@@ -51,8 +51,8 @@ const App = () => {
         credentials = await auth0.auth.passwordRealm({
           username: email,
           password,
-          realm: credentials.realm,
-          scope: credentials.scope,
+          realm: config.realm,
+          scope: config.scope,
         });
       }
 
@@ -63,7 +63,7 @@ const App = () => {
     }
   };
 
-  const onLogout = () => {
+  const onLogout = async () => {
     if (isSocialProvider(connection)) {
       auth0.webAuth
         .clearSession()
@@ -76,11 +76,12 @@ const App = () => {
         });
     } else {
       const logoutUrl = auth0.auth.logoutUrl({
-        clientId: credentials.clientId,
+        clientId: config.clientId,
         federated: true,
       });
 
       console.log({logoutUrl});
+      await fetch(logoutUrl);
     }
   };
 
@@ -115,7 +116,14 @@ const App = () => {
       )}
 
       <Button
-        onPress={loggedIn ? onLogout : onLogin}
+        onPress={
+          loggedIn
+            ? onLogout
+            : () => {
+                setConnection(connections.username_password);
+                onLogin();
+              }
+        }
         title={loggedIn ? 'Log Out' : 'Log In'}
       />
 
