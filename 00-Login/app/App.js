@@ -91,24 +91,28 @@ const App = () => {
       <Text style={styles.header}> Auth0Sample - Login </Text>
       <Text>You are{loggedIn ? ' ' : ' not '}logged in. </Text>
 
-      <View style={styles.block}>
-        <TextInput
-          placeholder="Email"
-          onChangeText={text => {
-            setEmail(text);
-          }}
-        />
-      </View>
+      {loggedIn ? null : (
+        <>
+          <View style={styles.block}>
+            <TextInput
+              placeholder="Email"
+              onChangeText={text => {
+                setEmail(text);
+              }}
+            />
+          </View>
 
-      <View style={styles.block}>
-        <TextInput
-          secureTextEntry
-          placeholder="Password"
-          onChangeText={text => {
-            setPassword(text);
-          }}
-        />
-      </View>
+          <View style={styles.block}>
+            <TextInput
+              secureTextEntry
+              placeholder="Password"
+              onChangeText={text => {
+                setPassword(text);
+              }}
+            />
+          </View>
+        </>
+      )}
 
       <Button
         onPress={loggedIn ? onLogout : onLogin}
